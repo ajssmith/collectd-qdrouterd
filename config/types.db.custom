@@ -1,0 +1,31 @@
+link-route-count value:GAUGE:0:U  
+auto-link-count  value:GAUGE:0:U
+link-count       value:GAUGE:0:U
+node-count       value:GAUGE:0:U
+addr-count       value:GAUGE:0:U
+connection-count value:GAUGE:0:U
+
+undelivered-count value:GAUGE:0:U
+unsettled-count   value:GAUGE:0:U
+delivery-count    value:GAUGE:0:U
+presettled-count  value:GAUGE:0:U
+accepted-count    value:GAUGE:0:U
+rejected-count    value:GAUGE:0:U
+released-count    value:GAUGE:0:U
+modified-count    value:GAUGE:0:U
+
+in-process                value:GAUGE:0:U
+subscriber-count          value:GAUGE:0:U    
+remote-count              value:GAUGE:0:U
+container-count           value:GAUGE:0:U
+deliveries-ingress        value:GAUGE:0:U
+deliveries-egress         value:GAUGE:0:U
+deliveries-transit        value:GAUGE:0:U
+deliveries-to-container   value:GAUGE:0:U
+deliveries-from-container value:GAUGE:0:U
+
+local-free-list-max           value:GAUGE:0:U
+total-alloc-from-heap         value:GAUGE:0:U
+held-by-threads               value:GAUGE:0:U
+batches-rebalanced-to-threads value:GAUGE:0:U
+batches-rebalanced-to-global  value:GAUGE:0:U
