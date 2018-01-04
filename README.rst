@@ -45,6 +45,8 @@ The plugin supports the following configuration options:
 * `Links`: Indicator to dispatch individual link stats. Defaults to `true`
 * `Addresses`: Indicator to dispatch individual address stats. Defaults to `false`
 * `Memory`: Indicator to dispatch memory profile stats. Defaults to `false`
+* `LinkInclude` : List of link names to include in link stats. Empty list defaults to all.
+* `AddressInclude` : List of address names to include in address stats. Empty list defaults to all.
 
 See `this example`_ for further details.
     .. _this example: config/collectd.conf

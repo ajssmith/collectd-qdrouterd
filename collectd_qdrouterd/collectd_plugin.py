@@ -24,40 +24,47 @@ from collectd_qdrouterd.qdrouterd import QdrouterdClient
 CONFIGS = []
 INSTANCES = []
 
-def configure(config):
+def configure(config_values):
     """
     Converts a collectd configuration into qdrouterd configuration.
     """
 
     collectd.debug('Configuring Qdrouterd Plugin')
+    link_include = list()
+    addr_include = list()
 
-    for node in config.children:
-        key = node.key.lower()
-        val = node.values[0]
-
-        if key == 'host':
-            host = val
-        elif key == 'port':
-            port = val
-        elif key == 'username':
-            username = val
-        elif key == 'password':
-            password = val
-        elif key == 'router':
-            router = val
-        elif key == 'links':
-            links = val
-        elif key == 'addresses':
-            addr = val
-        elif key == 'memory':
-            mem = val
+    for config_value  in config_values.children:
+        if config_value.key == 'Host':
+            host = config_value.values[0]
+        elif config_value.key == 'Port':
+            port = config_value.values[0]
+        elif config_value.key == 'Username':
+            username = config_value.values[0]
+        elif config_value.key == 'Password':
+            password = config_value.values[0]
+        elif config_value.key == 'Router':
+            router = config_value.values[0]
+        elif config_value.key == 'Links':
+            links = config_value.values[0]
+        elif config_value.key == 'Addresses':
+            addr = config_value.values[0]
+        elif config_value.key == 'Memory':
+            mem = config_value.values[0]
+        elif config_value.key == 'LinkInclude':
+            for pattern in config_value.children:
+                link_include.append(pattern.values[0])
+        elif config_value.key == 'AddressInclude':
+            for pattern in config_value.children:
+                addr_include.append(pattern.values[0])
         else:
-            collectd.warning('qdrouterd plugin: unknown config key: %s', key)
+            collectd.warning('qdrouterd plugin: unknown config key: %s', config_value.key)
 
     global CONFIGS
 
-    CONFIGS.append({'host': host, 'port': port, 'username': username, 'password': password,
-                    'router': router, 'links': links, 'addr': addr, 'mem': mem})
+    config = QdrouterdConfig(host, port, username, password,
+                             router, links, addr, mem,
+                             link_include, addr_include)
+    CONFIGS.append(config)
     
     
 def init():
@@ -88,11 +95,49 @@ def shutdown():
     for instance in INSTANCES:
         instance.close()
 
+class QdrouterdConfig(object):
+    """
+    Class that contains the qdrouterd plugin configuration
+    """
 
-def get(obj, attr):
-    if attr in obj.__dict__:
-        return obj.__dict__[attr]
-    return None
+    def __init__(self, host, port, username, password,
+                 router, links, addr, mem,
+                 link_include=None, addr_include=None):
+        self.host = host
+        self.port = port
+        self.username = username
+        self.password = password
+        self.router = router
+        self.links = links
+        self.addr = addr
+        self.mem = mem
+        self.link_include = list()
+        self.addr_include = list()
+        if link_include:
+            for pattern in link_include:
+                self.link_include.append(re.compile(pattern))
+        if addr_include:
+            for pattern in addr_include:
+                self.addr_include.append(re.compile(pattern))
+
+    def is_link_included(self, name):
+        if len(self.link_include) > 0:
+            for pattern in self.link_include:
+                search = pattern.search(name)
+                if search:
+                    return True
+            return False
+        return True
+
+    def is_addr_included(self, name):
+        if len(self.addr_include) > 0:
+            for pattern in self.addr_include:
+                search = pattern.search(name)
+                if search:
+                    return True
+            return False
+        return True
+
 
 CAPS_RE = re.compile('[A-Z]')
 
@@ -121,7 +166,7 @@ class CollectdPlugin(QdrouterdClient):
     
     def __init__(self,config):
         self.config = config
-        self.url = "amqp://" + config['host'] + ":" + config['port']
+        self.url = "amqp://" + config.host + ":" + config.port
         super(CollectdPlugin, self).__init__(
             QdrouterdClient.connection(self.url))
 
@@ -147,11 +192,6 @@ class CollectdPlugin(QdrouterdClient):
 
 
     def query(self, entity_type, attribute_names=None, limit=None):
-        if attribute_names:
-            unames = []
-            for a in attribute_names:
-                unames.append(a)
-            attribute_names = unames
         return super(CollectdPlugin, self).query(entity_type, attribute_names, count=limit).get_entities()
 
 
@@ -159,13 +199,13 @@ class CollectdPlugin(QdrouterdClient):
         """
         Dispatches metric values to collectd.
         """
-        if self.config['router']:
+        if self.config.router:
             self.dispatch_router()
-        if self.config['links']:
+        if self.config.links:
             self.dispatch_links()
-        if self.config['addr']:
+        if self.config.addr:
             self.dispatch_addresses()
-        if self.config['mem']:
+        if self.config.mem:
             self.dispatch_memory()
 
 
@@ -181,9 +221,9 @@ class CollectdPlugin(QdrouterdClient):
         router = objects[0]
         for stat_name in self.router_stats:
             if stat_name != 'id':
-                value = str(get(router, stat_name))
+                value = str(getattr(router, stat_name))
                 self.dispatch_values(value,
-                                     self.config['host'],
+                                     self.config.host,
                                      'router',
                                      router.id,
                                      uncamelcase(stat_name))
@@ -194,21 +234,23 @@ class CollectdPlugin(QdrouterdClient):
         Dispatch link data
         """
         collectd.debug('Dispatching link data')
-        
+
         objects = self.query('org.apache.qpid.dispatch.router.link',
                              self.link_stats)
 
         for link in objects:
+            if not self.config.is_link_included(link.linkName):
+                continue
             for stat_name in self.link_stats:
                 if stat_name != 'linkName':
-                    value = str(get(link, stat_name))
+                    value = str(getattr(link, stat_name))
                     self.dispatch_values(value,
-                                         self.config['host'],
+                                         self.config.host,
                                          'link',
                                          link.linkName,
                                          uncamelcase(stat_name))
 
-                   
+
     def dispatch_addresses(self):
         """
         Dispatch address data
@@ -219,11 +261,13 @@ class CollectdPlugin(QdrouterdClient):
                              self.addr_stats)
 
         for addr in objects:
+            if not self.config.is_addr_included(addr.name):
+                continue
             for stat_name in self.addr_stats:
                 if stat_name != 'name':
-                    value = str(get(addr, stat_name))
+                    value = str(getattr(addr, stat_name))
                     self.dispatch_values(value,
-                                         self.config['host'],
+                                         self.config.host,
                                          'address',
                                          self._addr_text(addr.name),
                                          uncamelcase(stat_name))
@@ -241,9 +285,9 @@ class CollectdPlugin(QdrouterdClient):
         for mem in objects:
             for stat_name in self.mem_stats:
                 if stat_name != 'identity':
-                    value = str(get(mem, stat_name))
+                    value = str(getattr(mem, stat_name))
                     self.dispatch_values(value,
-                                         self.config['host'],
+                                         self.config.host,
                                          'memory',
                                          mem.identity,
                                          uncamelcase(stat_name))
