@@ -215,8 +215,7 @@ class CollectdPlugin(QdrouterdClient):
         """
         collectd.debug('Dispatching general router data')
 
-        objects = self.query('org.apache.qpid.dispatch.router',
-                             self.router_stats)
+        objects = self.query('org.apache.qpid.dispatch.router')
 
         router = objects[0]
         for stat_name in self.router_stats:
@@ -235,8 +234,7 @@ class CollectdPlugin(QdrouterdClient):
         """
         collectd.debug('Dispatching link data')
 
-        objects = self.query('org.apache.qpid.dispatch.router.link',
-                             self.link_stats)
+        objects = self.query('org.apache.qpid.dispatch.router.link')
 
         for link in objects:
             if not self.config.is_link_included(link.linkName):
@@ -257,8 +255,7 @@ class CollectdPlugin(QdrouterdClient):
         """
         collectd.debug('Dispatching address data')
         
-        objects = self.query('org.apache.qpid.dispatch.router.address',
-                             self.addr_stats)
+        objects = self.query('org.apache.qpid.dispatch.router.address')
 
         for addr in objects:
             if not self.config.is_addr_included(addr.name):
@@ -279,8 +276,7 @@ class CollectdPlugin(QdrouterdClient):
         """
         collectd.debug('Dispatching memory data')
         
-        objects = self.query('org.apache.qpid.dispatch.allocator',
-                             self.mem_stats)
+        objects = self.query('org.apache.qpid.dispatch.allocator')
 
         for mem in objects:
             for stat_name in self.mem_stats:
