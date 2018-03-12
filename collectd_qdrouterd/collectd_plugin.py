@@ -65,14 +65,6 @@ def configure(config_values):
                              router, links, addr, mem,
                              link_include, addr_include)
     CONFIGS.append(config)
-    
-    
-def init():
-    """
-    Create the plugin object
-    """
-    for config in CONFIGS:
-        INSTANCES.append(CollectdPlugin(config))
 
 
 def read():
@@ -80,12 +72,13 @@ def read():
     Retrieve metrics and dispatch data.
     """
     collectd.debug('Reading data from qdrouterd and dispatching')
-    if not INSTANCES:
-        collectd.warning('Qdrouterd plugin not ready')
-        return
+    for config in CONFIGS:
+        INSTANCES.append(CollectdPlugin(config))
     for instance in INSTANCES:
         instance.read()
-
+    for instance in INSTANCES:
+        instance.close()
+    INSTANCES.clear()
 
 def shutdown():
     """
@@ -326,6 +319,5 @@ class CollectdPlugin(QdrouterdClient):
 # Register callbacks to collectd
 #
 collectd.register_config(configure)
-collectd.register_init(init)
 collectd.register_read(read)
 collectd.register_shutdown(shutdown)
