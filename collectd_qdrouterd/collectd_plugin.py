@@ -71,6 +71,7 @@ def read():
     """
     Retrieve metrics and dispatch data.
     """
+    global INSTANCES
     collectd.debug('Reading data from qdrouterd and dispatching')
     for config in CONFIGS:
         INSTANCES.append(CollectdPlugin(config))
@@ -78,7 +79,7 @@ def read():
         instance.read()
     for instance in INSTANCES:
         instance.close()
-    INSTANCES.clear()
+    INSTANCES= []
 
 def shutdown():
     """
@@ -153,10 +154,10 @@ class CollectdPlugin(QdrouterdClient):
                   'containerCount', 'deliveriesIngress', 'deliveriesEgress',
                   'deliveriesTransit', 'deliveriesToContainer',
                   'deliveriesFromContainer', 'name')
-    mem_stats = ('localFreeListMax', 'totalAllocFromHeap', 'heldByThreads', 
+    mem_stats = ('localFreeListMax', 'totalAllocFromHeap', 'heldByThreads',
                  'batchesRebalancedToThreads', 'batchesRebalancedToGlobal',
                  'identity')
-    
+
     def __init__(self,config):
         self.config = config
         self.url = "amqp://" + config.host + ":" + config.port
@@ -247,7 +248,7 @@ class CollectdPlugin(QdrouterdClient):
         Dispatch address data
         """
         collectd.debug('Dispatching address data')
-        
+
         objects = self.query('org.apache.qpid.dispatch.router.address')
 
         for addr in objects:
@@ -262,13 +263,13 @@ class CollectdPlugin(QdrouterdClient):
                                          self._addr_text(addr.name),
                                          uncamelcase(stat_name))
 
-            
+
     def dispatch_memory(self):
         """
         Dispatch memory data
         """
         collectd.debug('Dispatching memory data')
-        
+
         objects = self.query('org.apache.qpid.dispatch.allocator')
 
         for mem in objects:
@@ -283,7 +284,7 @@ class CollectdPlugin(QdrouterdClient):
 
 
 
-    @staticmethod                                 
+    @staticmethod
     def dispatch_values(values, host, plugin, plugin_instance,
                         metric_type, type_instance=None):
         """
