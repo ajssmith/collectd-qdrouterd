@@ -94,7 +94,6 @@ class QdrouterdClient(object):
         self.type = u'org.amqp.management' # AMQP management node type
         self.url = connection.url
         self.client = SyncRequestResponse(connection, self.url.path)
-        self.reply_to = self.client.reply_to
 
     def close(self):
         """

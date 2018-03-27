@@ -76,9 +76,10 @@ def read():
     for config in CONFIGS:
         INSTANCES.append(CollectdPlugin(config))
     for instance in INSTANCES:
-        instance.read()
-    for instance in INSTANCES:
-        instance.close()
+        try:
+            instance.read()
+        finally:
+            instance.close()
     INSTANCES= []
 
 def shutdown():
