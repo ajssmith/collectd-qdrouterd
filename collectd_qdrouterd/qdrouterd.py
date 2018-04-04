@@ -101,6 +101,7 @@ class QdrouterdClient(object):
         """
         if self.client:
             self.client.connection.close()
+            self.client.receiver = None
             self.client = None
 
     def __repr__(self):
