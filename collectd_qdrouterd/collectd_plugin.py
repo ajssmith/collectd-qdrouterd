@@ -147,10 +147,15 @@ class CollectdPlugin(QdrouterdClient):
     """
     router_stats = ('linkRouteCount', 'autoLinkCount', 'linkCount',
                     'nodeCount', 'addrCount', 'connectionCount',
-                    'id')
+                    'presettledDeliveries', 'droppedPresettledDeliveries',
+                    'acceptedDeliveries', 'rejectedDeliveries',
+                    'modifiedDeliveries', 'deliveriesIngress',
+                    'deliveriesEgress', 'deliveriesTransit',
+                    'deliveriesIngressRouteContainer',
+                    'deliveriesEgressRouteContainer','id')
     link_stats = ('undeliveredCount', 'unsettledCount', 'deliveryCount',
-                  'presettledCount', 'acceptedCount', 'rejectedCount',
-                  'releasedCount', 'modifiedCount', 'linkName')
+                  'presettledCount', 'droppedPresettledCount', 'acceptedCount',
+                  'rejectedCount', 'releasedCount', 'modifiedCount', 'linkName')
     addr_stats = ('inProcess', 'subscriberCount', 'remoteCount',
                   'containerCount', 'deliveriesIngress', 'deliveriesEgress',
                   'deliveriesTransit', 'deliveriesToContainer',
@@ -215,12 +220,15 @@ class CollectdPlugin(QdrouterdClient):
         router = objects[0]
         for stat_name in self.router_stats:
             if stat_name != 'id':
-                value = str(getattr(router, stat_name))
-                self.dispatch_values(value,
-                                     self.config.host,
-                                     'router',
-                                     router.id,
-                                     uncamelcase(stat_name))
+                try:
+                    value = str(getattr(router, stat_name))
+                    self.dispatch_values(value,
+                                         self.config.host,
+                                         'router',
+                                         router.id,
+                                         uncamelcase(stat_name))
+                except:
+                    pass
 
 
     def dispatch_links(self):
@@ -236,12 +244,15 @@ class CollectdPlugin(QdrouterdClient):
                 continue
             for stat_name in self.link_stats:
                 if stat_name != 'linkName':
-                    value = str(getattr(link, stat_name))
-                    self.dispatch_values(value,
-                                         self.config.host,
-                                         'link',
-                                         link.linkName,
-                                         uncamelcase(stat_name))
+                    try:
+                        value = str(getattr(link, stat_name))
+                        self.dispatch_values(value,
+                                             self.config.host,
+                                             'link',
+                                             link.linkName,
+                                             uncamelcase(stat_name))
+                    except:
+                        pass
 
 
     def dispatch_addresses(self):
@@ -257,12 +268,15 @@ class CollectdPlugin(QdrouterdClient):
                 continue
             for stat_name in self.addr_stats:
                 if stat_name != 'name':
-                    value = str(getattr(addr, stat_name))
-                    self.dispatch_values(value,
-                                         self.config.host,
-                                         'address',
-                                         self._addr_text(addr.name),
-                                         uncamelcase(stat_name))
+                    try:
+                        value = str(getattr(addr, stat_name))
+                        self.dispatch_values(value,
+                                             self.config.host,
+                                             'address',
+                                             self._addr_text(addr.name),
+                                             uncamelcase(stat_name))
+                    except:
+                        pass
 
 
     def dispatch_memory(self):
@@ -276,12 +290,15 @@ class CollectdPlugin(QdrouterdClient):
         for mem in objects:
             for stat_name in self.mem_stats:
                 if stat_name != 'identity':
-                    value = str(getattr(mem, stat_name))
-                    self.dispatch_values(value,
-                                         self.config.host,
-                                         'memory',
-                                         mem.identity,
-                                         uncamelcase(stat_name))
+                    try:
+                        value = str(getattr(mem, stat_name))
+                        self.dispatch_values(value,
+                                             self.config.host,
+                                             'memory',
+                                             mem.identity,
+                                             uncamelcase(stat_name))
+                    except:
+                        pass
 
 
 
